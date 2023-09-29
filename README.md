@@ -1,0 +1,1 @@
+# bitrise-step-generate-xcode-html-report
