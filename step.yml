@@ -1,0 +1,38 @@
+---
+title: Generate Xcode html report
+summary: The Step converts xcresult summaries to html reports.
+description: |-
+  Fill out.
+website: https://github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report
+source_code_url: https://github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report
+support_url: https://github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/issues
+
+type_tags:
+- test
+
+project_type_tags:
+- ios
+- react-native
+- cordova
+- ionic
+- flutter
+
+toolkit:
+  go:
+    package_name: github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report
+
+inputs:
+- verbose: "false"
+  opts:
+    title: Enable verbose logging
+    summary: Enable logging additional information for debugging.
+    is_required: true
+    value_options:
+    - "true"
+    - "false"
+
+outputs:
+- BITRISE_TEST_REPORT_DIR:
+  opts:
+    title: Test report location
+    summary: This folder contains the generated html reports and their assets.
