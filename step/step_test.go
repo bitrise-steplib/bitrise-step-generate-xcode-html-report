@@ -1,7 +1,6 @@
 package step
 
 import (
-	"fmt"
 	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/mocks"
 	"github.com/stretchr/testify/mock"
 	"os"
@@ -26,11 +25,15 @@ func TestReportGenerator_ProcessConfig(t *testing.T) {
 		{
 			name: "Single input",
 			envs: map[string]string{
-				"BITRISE_TEST_DEPLOY_DIR": "test-dir",
-				"verbose":                 "false",
+				"test_result_dir":   "test-dir",
+				"xcresult_patterns": "pattern.xcresult",
+				"verbose":           "false",
 			},
 			want: &Config{
 				TestDeployDir: "test-dir",
+				XcresultPatterns: []string{
+					"pattern.xcresult",
+				},
 			},
 		},
 	}
@@ -71,13 +74,16 @@ func TestReportGenerator_InstallDependencies(t *testing.T) {
 	envRepository := env.NewRepository()
 	generator := ReportGenerator{
 		inputParser:    stepconf.NewInputParser(envRepository),
-		commandFactory: command.NewFactory(envRepository),
-		exporter:       export.NewExporter(commandFactory),
+		commandFactory: commandFactory,
+		exporter:       export.NewExporter(command.NewFactory(envRepository)),
 		logger:         log.NewLogger(),
 	}
 
 	err := generator.InstallDependencies()
 	require.NoError(t, err)
+
+	cmd.AssertExpectations(t)
+	commandFactory.AssertExpectations(t)
 }
 
 func TestReportGenerator_Run(t *testing.T) {
@@ -109,24 +115,10 @@ func TestReportGenerator_Run(t *testing.T) {
 
 	result, err := generator.Run(Config{TestDeployDir: testDeployDir})
 	require.NoError(t, err)
+	require.NotEqual(t, "", result.TestReportDir)
 
-	fmt.Println(result)
-}
-
-func setupRunEnvironment(t *testing.T) string {
-	tempDir := t.TempDir()
-	xcresultPath := filepath.Join(tempDir, "test-scheme.xcresult")
-	require.NoError(t, os.Mkdir(xcresultPath, 0755))
-
-	imagePaths := []string{
-		filepath.Join(xcresultPath, "a.png"),
-		filepath.Join(xcresultPath, "b.png"),
-	}
-	for _, path := range imagePaths {
-		require.NoError(t, os.WriteFile(path, []byte("abcd"), 0755))
-	}
-
-	return tempDir
+	cmd.AssertExpectations(t)
+	commandFactory.AssertExpectations(t)
 }
 
 func TestReportGenerator_Export(t *testing.T) {
@@ -149,4 +141,20 @@ func TestReportGenerator_Export(t *testing.T) {
 
 	err := generator.Export(Result{TestReportDir: value})
 	require.NoError(t, err)
+}
+
+func setupRunEnvironment(t *testing.T) string {
+	tempDir := t.TempDir()
+	xcresultPath := filepath.Join(tempDir, "test-scheme", "test-scheme.xcresult")
+	require.NoError(t, os.MkdirAll(xcresultPath, 0755))
+
+	imagePaths := []string{
+		filepath.Join(xcresultPath, "a.png"),
+		filepath.Join(xcresultPath, "b.png"),
+	}
+	for _, path := range imagePaths {
+		require.NoError(t, os.WriteFile(path, []byte("abcd"), 0755))
+	}
+
+	return tempDir
 }

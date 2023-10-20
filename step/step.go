@@ -2,7 +2,6 @@ package step
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,12 +17,14 @@ const (
 )
 
 type Input struct {
-	TestDeployDir string `env:"BITRISE_TEST_DEPLOY_DIR,required"`
-	Verbose       bool   `env:"verbose,opt[true,false]"`
+	TestDeployDir    string `env:"test_result_dir,required"`
+	XcresultPatterns string `env:"xcresult_patterns"`
+	Verbose          bool   `env:"verbose,opt[true,false]"`
 }
 
 type Config struct {
-	TestDeployDir string
+	TestDeployDir    string
+	XcresultPatterns []string
 }
 
 type Result struct {
@@ -57,8 +58,17 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 	r.logger.Println()
 	r.logger.EnableDebugLog(input.Verbose)
 
+	patterns := strings.Split(input.XcresultPatterns, "\n")
+
+	for _, pattern := range patterns {
+		if !strings.HasSuffix(pattern, ".xcresult") {
+			return nil, fmt.Errorf("pattern (%s) must filter for xcresult files", pattern)
+		}
+	}
+
 	return &Config{
-		TestDeployDir: input.TestDeployDir,
+		TestDeployDir:    input.TestDeployDir,
+		XcresultPatterns: patterns,
 	}, nil
 }
 
@@ -77,9 +87,24 @@ func (r *ReportGenerator) InstallDependencies() error {
 func (r *ReportGenerator) Run(config Config) (Result, error) {
 	r.logger.Infof("Collecting xcresult files")
 
-	paths, err := collectXcresultFiles(config.TestDeployDir)
+	patterns := []string{
+		fmt.Sprintf("%s/**/*.xcresult", config.TestDeployDir),
+	}
+	if 0 < len(config.XcresultPatterns) {
+		patterns = config.XcresultPatterns
+	}
+
+	paths, err := collectFilesWithPatterns(patterns)
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to find all xcresult files: %w", err)
+	}
+
+	if len(paths) == 0 {
+		r.logger.Printf("No files found.")
+
+		return Result{
+			TestReportDir: "",
+		}, nil
 	}
 
 	r.logger.Printf("List of files:")
@@ -139,27 +164,27 @@ func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string
 	return nil
 }
 
-func collectXcresultFiles(dir string) ([]string, error) {
-	var files []string
+func collectFilesWithPatterns(patterns []string) ([]string, error) {
+	// Go does not have a set, so a map will help filter out duplicate results.
+	allMatches := map[string]struct{}{}
 
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	for _, pattern := range patterns {
+		matches, err := filepath.Glob(pattern)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		isDir := d.IsDir()
-		extension := filepath.Ext(d.Name())
-
-		if isDir && extension == ".xcresult" {
-			files = append(files, path)
+		for _, match := range matches {
+			allMatches[match] = struct{}{}
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
-	return files, nil
+	var paths []string
+	for key := range allMatches {
+		paths = append(paths, key)
+	}
+
+	return paths, nil
 }
 
 func testReportsRootDir() (string, error) {
