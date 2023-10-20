@@ -1,10 +1,25 @@
 format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
+app:
+  envs:
+  - SAMPLE_ARTIFACTS_GIT_CLONE_URL: https://github.com/bitrise-io/sample-artifacts.git
+
 workflows:
   sample:
+    before_run:
+    - _download_sample_artifacts
+    after_run:
+    - _print_test_report_dir_path
     steps:
-    - path::./: { }
+    - change-workdir:
+        inputs:
+        - path: ./_tmp
+        - is_create_path: true
+    - path::./:
+        inputs:
+        - xcresult_patterns: |-
+            $PWD/xcresults/*.xcresult
 
   check:
     steps:
@@ -22,3 +37,27 @@ workflows:
         inputs:
         - contrib_section: docs/contribution.md
         - example_section: docs/examples.md
+
+  _download_sample_artifacts:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            rm -rf ./_tmp
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
+            git clone --depth 1 $SAMPLE_ARTIFACTS_GIT_CLONE_URL ./_tmp
+
+  _print_test_report_dir_path:
+    steps:
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            echo "The test report dir is at $BITRISE_TEST_REPORT_DIR"
