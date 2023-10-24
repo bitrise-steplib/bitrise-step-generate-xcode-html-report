@@ -59,16 +59,23 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 	r.logger.EnableDebugLog(input.Verbose)
 
 	patterns := strings.Split(input.XcresultPatterns, "\n")
+	var filteredPatterns []string
 
 	for _, pattern := range patterns {
+		if pattern == "" {
+			continue
+		}
+
 		if !strings.HasSuffix(pattern, ".xcresult") {
 			return nil, fmt.Errorf("pattern (%s) must filter for xcresult files", pattern)
 		}
+
+		filteredPatterns = append(filteredPatterns, pattern)
 	}
 
 	return &Config{
 		TestDeployDir:    input.TestDeployDir,
-		XcresultPatterns: patterns,
+		XcresultPatterns: filteredPatterns,
 	}, nil
 }
 

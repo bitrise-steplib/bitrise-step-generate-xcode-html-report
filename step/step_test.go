@@ -36,6 +36,18 @@ func TestReportGenerator_ProcessConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Empty input",
+			envs: map[string]string{
+				"test_result_dir":   "test-dir",
+				"xcresult_patterns": "",
+				"verbose":           "false",
+			},
+			want: &Config{
+				TestDeployDir:    "test-dir",
+				XcresultPatterns: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
