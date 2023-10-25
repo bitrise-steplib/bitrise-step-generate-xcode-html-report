@@ -62,7 +62,7 @@ inputs:
     - "false"
 
 outputs:
-- BITRISE_TEST_REPORT_DIR:
+- BITRISE_HTML_REPORT_DIR:
   opts:
-    title: Test report location
-    summary: This folder contains the generated html reports and their assets.
+    title: Html test report location
+    summary: This folder contains the generated html test reports and their assets.

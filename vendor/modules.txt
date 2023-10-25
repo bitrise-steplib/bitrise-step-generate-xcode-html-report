@@ -19,6 +19,10 @@ github.com/bitrise-io/go-utils/v2/pathutil
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/mattn/go-zglob v0.0.4
+## explicit; go 1.12
+github.com/mattn/go-zglob
+github.com/mattn/go-zglob/fastwalk
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib

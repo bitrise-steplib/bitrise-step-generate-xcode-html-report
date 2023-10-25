@@ -10,10 +10,11 @@ import (
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
 	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/mattn/go-zglob"
 )
 
 const (
-	testReportDirKey = "BITRISE_TEST_REPORT_DIR"
+	testReportDirKey = "BITRISE_HTML_REPORT_DIR"
 )
 
 type Input struct {
@@ -55,7 +56,6 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 	}
 
 	stepconf.Print(input)
-	r.logger.Println()
 	r.logger.EnableDebugLog(input.Verbose)
 
 	patterns := strings.Split(input.XcresultPatterns, "\n")
@@ -80,6 +80,9 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 }
 
 func (r *ReportGenerator) InstallDependencies() error {
+	r.logger.Println()
+	r.logger.Infof("Installing XCTestHTMLReport")
+
 	params := []string{"install", "bitrise-io/XCTestHTMLReport@speed-improvements", "--no-link"}
 	cmd := r.commandFactory.Create("mint", params, nil)
 
@@ -92,6 +95,7 @@ func (r *ReportGenerator) InstallDependencies() error {
 }
 
 func (r *ReportGenerator) Run(config Config) (Result, error) {
+	r.logger.Println()
 	r.logger.Infof("Collecting xcresult files")
 
 	patterns := []string{
@@ -176,7 +180,7 @@ func collectFilesWithPatterns(patterns []string) ([]string, error) {
 	allMatches := map[string]struct{}{}
 
 	for _, pattern := range patterns {
-		matches, err := filepath.Glob(pattern)
+		matches, err := zglob.Glob(pattern)
 		if err != nil {
 			return nil, err
 		}

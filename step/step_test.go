@@ -1,8 +1,6 @@
 package step
 
 import (
-	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/mocks"
-	"github.com/stretchr/testify/mock"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,6 +11,8 @@ import (
 	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/mocks"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -138,7 +138,7 @@ func TestReportGenerator_Export(t *testing.T) {
 	cmd.On("RunAndReturnTrimmedCombinedOutput").Return("", nil).Once()
 
 	value := "test-dir"
-	arguments := []string{"add", "--key", "BITRISE_TEST_REPORT_DIR", "--value", value}
+	arguments := []string{"add", "--key", "BITRISE_HTML_REPORT_DIR", "--value", value}
 	commandFactory := new(mocks.Factory)
 	commandFactory.On("Create", "envman", arguments, mock.Anything).Return(cmd).Once()
 
