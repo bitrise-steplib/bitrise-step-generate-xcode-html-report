@@ -31,7 +31,7 @@ You can also run this step directly with [Bitrise CLI](https://github.com/bitris
 
 | Environment Variable | Description |
 | --- | --- |
-| `BITRISE_TEST_REPORT_DIR` | This folder contains the generated html reports and their assets. |
+| `BITRISE_HTML_REPORT_DIR` | This folder contains the generated html reports and their assets. |
 </details>
 
 ## 🙋 Contributing

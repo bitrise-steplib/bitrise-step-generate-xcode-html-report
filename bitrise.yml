@@ -10,7 +10,7 @@ workflows:
     before_run:
     - _download_sample_artifacts
     after_run:
-    - _print_test_report_dir_path
+    - _print_html_report_dir_path
     steps:
     - change-workdir:
         inputs:
@@ -53,11 +53,11 @@ workflows:
             set -ex
             git clone --depth 1 $SAMPLE_ARTIFACTS_GIT_CLONE_URL ./_tmp
 
-  _print_test_report_dir_path:
+  _print_html_report_dir_path:
     steps:
     - script:
         inputs:
         - content: |-
             #!/bin/bash
             set -ex
-            echo "The test report dir is at $BITRISE_TEST_REPORT_DIR"
+            echo "The html report dir is at $BITRISE_HTML_REPORT_DIR"
