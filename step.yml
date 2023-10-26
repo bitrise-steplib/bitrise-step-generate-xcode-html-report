@@ -42,12 +42,14 @@ inputs:
     description: |-
       A newline (`\n`) separated list of all of the xcresult files
 
-      This input is only needed if you use Fastlane or script based steps.
+      You do not need to specify the xcresult if your are using the official Xcode test steps. This is only needed if you use Fastlane or script based setup.
 
       This input supports glob patterns. This means you can use exact paths or wildcards. Here are a few examples:
-      - /path/to/MyApp.xcresult
-      - /path/to/output/folder/*.xcresult
-      - /path/to/parent/folder/**/*.xcresult
+      ```
+      /path/to/MyApp.xcresult
+      /path/to/output/folder/*.xcresult
+      /path/to/parent/folder/**/*.xcresult
+      ```
 
       The only requirements are that every pattern must only find xcresult files and they have to be absolute paths.
     is_required: false

@@ -199,7 +199,7 @@ func collectFilesWithPatterns(patterns []string) ([]string, error) {
 }
 
 func testReportsRootDir() (string, error) {
-	return os.MkdirTemp("", "test-reports")
+	return os.MkdirTemp("", "html-reports")
 }
 
 func moveAssets(xcresultPath string, testReportDir string) error {
