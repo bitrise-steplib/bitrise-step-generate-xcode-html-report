@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testReportDirKey = "BITRISE_HTML_REPORT_DIR"
+	htmlReportDirKey = "BITRISE_HTML_REPORT_DIR"
 )
 
 type Input struct {
@@ -29,7 +29,7 @@ type Config struct {
 }
 
 type Result struct {
-	TestReportDir string
+	HtmlReportDir string
 }
 
 type ReportGenerator struct {
@@ -114,7 +114,7 @@ func (r *ReportGenerator) Run(config Config) (Result, error) {
 		r.logger.Printf("No files found.")
 
 		return Result{
-			TestReportDir: "",
+			HtmlReportDir: "",
 		}, nil
 	}
 
@@ -123,7 +123,7 @@ func (r *ReportGenerator) Run(config Config) (Result, error) {
 		r.logger.Printf("- %s", path)
 	}
 
-	rootDir, err := testReportsRootDir()
+	rootDir, err := htmlReportsRootDir()
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to create test report directory: %w", err)
 	}
@@ -141,12 +141,12 @@ func (r *ReportGenerator) Run(config Config) (Result, error) {
 	r.logger.Donef("Finished")
 
 	return Result{
-		TestReportDir: rootDir,
+		HtmlReportDir: rootDir,
 	}, nil
 }
 
 func (r *ReportGenerator) Export(result Result) error {
-	return r.exporter.ExportOutput(testReportDirKey, result.TestReportDir)
+	return r.exporter.ExportOutput(htmlReportDirKey, result.HtmlReportDir)
 }
 
 func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string) error {
@@ -161,6 +161,7 @@ func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string
 		return err
 	}
 
+	r.logger.Printf("Generating report for: %s", baseName)
 	params := []string{"run", "bitrise-io/XCTestHTMLReport@speed-improvements", "--output", dirPath, xcresultPath}
 	cmd := r.commandFactory.Create("mint", params, nil)
 	_, err = cmd.RunAndReturnTrimmedCombinedOutput()
@@ -198,17 +199,21 @@ func collectFilesWithPatterns(patterns []string) ([]string, error) {
 	return paths, nil
 }
 
-func testReportsRootDir() (string, error) {
-	return os.MkdirTemp("", "html-reports")
+func htmlReportsRootDir() (string, error) {
+	reportDir := os.Getenv(htmlReportDirKey)
+	if reportDir == "" {
+		return os.MkdirTemp("", "html_reports")
+	}
+	return reportDir, nil
 }
 
-func moveAssets(xcresultPath string, testReportDir string) error {
+func moveAssets(xcresultPath string, htmlReportDir string) error {
 	entries, err := os.ReadDir(xcresultPath)
 	if err != nil {
 		return err
 	}
 
-	assetFolder := filepath.Join(testReportDir, filepath.Base(xcresultPath))
+	assetFolder := filepath.Join(htmlReportDir, filepath.Base(xcresultPath))
 	if err := os.Mkdir(assetFolder, 0755); err != nil {
 		return err
 	}

@@ -127,7 +127,7 @@ func TestReportGenerator_Run(t *testing.T) {
 
 	result, err := generator.Run(Config{TestDeployDir: testDeployDir})
 	require.NoError(t, err)
-	require.NotEqual(t, "", result.TestReportDir)
+	require.NotEqual(t, "", result.HtmlReportDir)
 
 	cmd.AssertExpectations(t)
 	commandFactory.AssertExpectations(t)
@@ -151,7 +151,7 @@ func TestReportGenerator_Export(t *testing.T) {
 		logger:         log.NewLogger(),
 	}
 
-	err := generator.Export(Result{TestReportDir: value})
+	err := generator.Export(Result{HtmlReportDir: value})
 	require.NoError(t, err)
 }
 
