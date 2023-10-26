@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -59,6 +60,7 @@ func TestReportGenerator_ProcessConfig(t *testing.T) {
 			inputParser := stepconf.NewInputParser(envRepository)
 			commandFactory := command.NewFactory(envRepository)
 			generator := ReportGenerator{
+				envRepository:  env.NewRepository(),
 				inputParser:    inputParser,
 				commandFactory: commandFactory,
 				exporter:       export.Exporter{},
@@ -85,6 +87,7 @@ func TestReportGenerator_InstallDependencies(t *testing.T) {
 
 	envRepository := env.NewRepository()
 	generator := ReportGenerator{
+		envRepository:  env.NewRepository(),
 		inputParser:    stepconf.NewInputParser(envRepository),
 		commandFactory: commandFactory,
 		exporter:       export.NewExporter(command.NewFactory(envRepository)),
@@ -119,6 +122,7 @@ func TestReportGenerator_Run(t *testing.T) {
 
 	envRepository := env.NewRepository()
 	generator := ReportGenerator{
+		envRepository:  envRepository,
 		inputParser:    stepconf.NewInputParser(envRepository),
 		commandFactory: commandFactory,
 		exporter:       export.NewExporter(command.NewFactory(envRepository)),
@@ -133,6 +137,74 @@ func TestReportGenerator_Run(t *testing.T) {
 	commandFactory.AssertExpectations(t)
 }
 
+func TestReportGenerator_Run_ReportFolderHandling(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    func() string
+		wantErr bool
+	}{
+		{
+			name: "Existing folder",
+			path: func() string {
+				path := filepath.Join(t.TempDir(), "random-folder")
+				require.NoError(t, os.MkdirAll(path, 0755))
+
+				return path
+			},
+		},
+		{
+			name: "Missing folder",
+			path: func() string {
+				return "/path/that/does/not/exist"
+			},
+			wantErr: true,
+		},
+		{
+			name: "File input",
+			path: func() string {
+				path := filepath.Join(t.TempDir(), "file.log")
+				require.NoError(t, os.WriteFile(path, []byte("a"), 0755))
+
+				return path
+			},
+			wantErr: true,
+		},
+		{
+			name: "No input",
+			path: func() string {
+				return ""
+			},
+		},
+	}
+	for _, tt := range tests {
+		dir := tt.path()
+
+		envRepository := new(mocks.Repository)
+		envRepository.On("Get", "BITRISE_HTML_REPORT_DIR").Return(dir)
+
+		generator := ReportGenerator{
+			envRepository:  envRepository,
+			inputParser:    nil,
+			commandFactory: nil,
+			exporter:       export.Exporter{},
+			logger:         nil,
+		}
+		rootDir, err := generator.htmlReportsRootDir()
+		if tt.wantErr {
+			assert.NotNil(t, err)
+			continue
+		} else {
+			require.NoError(t, err)
+		}
+
+		if dir != "" {
+			assert.Equal(t, dir, rootDir)
+		} else {
+			assert.NotEqual(t, "", rootDir)
+		}
+	}
+}
+
 func TestReportGenerator_Export(t *testing.T) {
 	cmd := new(mocks.Command)
 	cmd.On("RunAndReturnTrimmedCombinedOutput").Return("", nil).Once()
@@ -145,6 +217,7 @@ func TestReportGenerator_Export(t *testing.T) {
 	exporter := export.NewExporter(commandFactory)
 	envRepository := env.NewRepository()
 	generator := ReportGenerator{
+		envRepository:  envRepository,
 		inputParser:    stepconf.NewInputParser(envRepository),
 		commandFactory: command.NewFactory(envRepository),
 		exporter:       exporter,

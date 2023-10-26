@@ -9,7 +9,9 @@ import (
 	"github.com/bitrise-io/go-steputils/v2/export"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
 	"github.com/bitrise-io/go-utils/v2/command"
+	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/mattn/go-zglob"
 )
 
@@ -33,14 +35,16 @@ type Result struct {
 }
 
 type ReportGenerator struct {
+	envRepository  env.Repository
 	inputParser    stepconf.InputParser
 	commandFactory command.Factory
 	exporter       export.Exporter
 	logger         log.Logger
 }
 
-func NewReportGenerator(inputParser stepconf.InputParser, commandFactory command.Factory, exporter export.Exporter, logger log.Logger) ReportGenerator {
+func NewReportGenerator(envRepository env.Repository, inputParser stepconf.InputParser, commandFactory command.Factory, exporter export.Exporter, logger log.Logger) ReportGenerator {
 	return ReportGenerator{
+		envRepository:  envRepository,
 		inputParser:    inputParser,
 		commandFactory: commandFactory,
 		exporter:       exporter,
@@ -123,7 +127,7 @@ func (r *ReportGenerator) Run(config Config) (Result, error) {
 		r.logger.Printf("- %s", path)
 	}
 
-	rootDir, err := htmlReportsRootDir()
+	rootDir, err := r.htmlReportsRootDir()
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to create test report directory: %w", err)
 	}
@@ -176,6 +180,23 @@ func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string
 	return nil
 }
 
+func (r *ReportGenerator) htmlReportsRootDir() (string, error) {
+	reportDir := r.envRepository.Get(htmlReportDirKey)
+	if reportDir == "" {
+		return os.MkdirTemp("", "html-reports")
+	}
+
+	exists, err := pathutil.NewPathChecker().IsDirExists(reportDir)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return "", fmt.Errorf("html report dir (%s) does not exist or is not a folder", reportDir)
+	}
+
+	return reportDir, nil
+}
+
 func collectFilesWithPatterns(patterns []string) ([]string, error) {
 	// Go does not have a set, so a map will help filter out duplicate results.
 	allMatches := map[string]struct{}{}
@@ -197,14 +218,6 @@ func collectFilesWithPatterns(patterns []string) ([]string, error) {
 	}
 
 	return paths, nil
-}
-
-func htmlReportsRootDir() (string, error) {
-	reportDir := os.Getenv(htmlReportDirKey)
-	if reportDir == "" {
-		return os.MkdirTemp("", "html_reports")
-	}
-	return reportDir, nil
 }
 
 func moveAssets(xcresultPath string, htmlReportDir string) error {
