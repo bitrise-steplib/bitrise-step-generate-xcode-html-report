@@ -62,10 +62,11 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 	stepconf.Print(input)
 	r.logger.EnableDebugLog(input.Verbose)
 
-	patterns := strings.Split(input.XcresultPatterns, "\n")
+	patterns := strings.Split(strings.TrimSpace(input.XcresultPatterns), "\n")
 	var filteredPatterns []string
 
-	for _, pattern := range patterns {
+	for _, p := range patterns {
+		pattern := strings.TrimSpace(p)
 		if pattern == "" {
 			continue
 		}
