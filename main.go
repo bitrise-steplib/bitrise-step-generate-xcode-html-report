@@ -64,5 +64,5 @@ func createStep(logger log.Logger) step.ReportGenerator {
 		EnvRepository:  envRepository,
 	}
 
-	return step.NewReportGenerator(envRepository, inputParser, commandFactory, exporter, logger, &generator)
+	return step.NewReportGenerator(envRepository, inputParser, exporter, logger, &generator)
 }

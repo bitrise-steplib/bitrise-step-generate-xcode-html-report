@@ -10,7 +10,6 @@ import (
 
 	"github.com/bitrise-io/go-steputils/v2/export"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
-	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
@@ -37,29 +36,26 @@ type Result struct {
 }
 
 type ReportGenerator struct {
-	envRepository  env.Repository
-	inputParser    stepconf.InputParser
-	commandFactory command.Factory
-	exporter       export.Exporter
-	logger         log.Logger
-	htmlGenerator  xctesthtmlreport.Generator
+	envRepository env.Repository
+	inputParser   stepconf.InputParser
+	exporter      export.Exporter
+	logger        log.Logger
+	htmlGenerator xctesthtmlreport.Generator
 }
 
 func NewReportGenerator(
 	envRepository env.Repository,
 	inputParser stepconf.InputParser,
-	commandFactory command.Factory,
 	exporter export.Exporter,
 	logger log.Logger,
 	generator xctesthtmlreport.Generator,
 ) ReportGenerator {
 	return ReportGenerator{
-		envRepository:  envRepository,
-		inputParser:    inputParser,
-		commandFactory: commandFactory,
-		exporter:       exporter,
-		logger:         logger,
-		htmlGenerator:  generator,
+		envRepository: envRepository,
+		inputParser:   inputParser,
+		exporter:      exporter,
+		logger:        logger,
+		htmlGenerator: generator,
 	}
 }
 

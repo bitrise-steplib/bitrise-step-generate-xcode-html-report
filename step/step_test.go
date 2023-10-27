@@ -1,6 +1,8 @@
 package step
 
 import (
+	"fmt"
+	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/xctesthtmlreport"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -58,13 +60,11 @@ func TestReportGenerator_ProcessConfig(t *testing.T) {
 			}
 
 			inputParser := stepconf.NewInputParser(envRepository)
-			commandFactory := command.NewFactory(envRepository)
 			generator := ReportGenerator{
-				envRepository:  env.NewRepository(),
-				inputParser:    inputParser,
-				commandFactory: commandFactory,
-				exporter:       export.Exporter{},
-				logger:         log.NewLogger(),
+				envRepository: env.NewRepository(),
+				inputParser:   inputParser,
+				exporter:      export.Exporter{},
+				logger:        log.NewLogger(),
 			}
 
 			got, err := generator.ProcessConfig()
@@ -93,39 +93,29 @@ func TestReportGenerator_InstallDependencies(t *testing.T) {
 }
 
 func TestReportGenerator_Run(t *testing.T) {
-	testDeployDir := setupRunEnvironment(t)
+	testDeployDir := t.TempDir()
+	xcresultPath := filepath.Join(testDeployDir, "test-scheme", "test-scheme.xcresult")
+	require.NoError(t, os.MkdirAll(xcresultPath, 0755))
 
-	cmd := new(mocks.Command)
-	cmd.On("RunAndReturnTrimmedCombinedOutput").Return("", nil).Once()
-
-	commandFactory := new(mocks.Factory)
-	runFunc := func(args mock.Arguments) {
-		arguments, ok := args.Get(1).([]string)
-		if !ok {
-			t.FailNow()
-		}
-
-		require.Equal(t, "run", arguments[0])
-		require.Equal(t, "bitrise-io/XCTestHTMLReport@speed-improvements", arguments[1])
-		require.Equal(t, "--output", arguments[2])
-	}
-	commandFactory.On("Create", "mint", mock.Anything, mock.Anything).Run(runFunc).Return(cmd).Once()
+	htmlGenerator := new(mocks.Generator)
+	htmlGenerator.On("Generate", mock.Anything, mock.Anything).Return(nil)
 
 	envRepository := env.NewRepository()
 	generator := ReportGenerator{
-		envRepository:  envRepository,
-		inputParser:    stepconf.NewInputParser(envRepository),
-		commandFactory: commandFactory,
-		exporter:       export.NewExporter(command.NewFactory(envRepository)),
-		logger:         log.NewLogger(),
+		envRepository: envRepository,
+		inputParser:   stepconf.NewInputParser(envRepository),
+		exporter:      export.NewExporter(command.NewFactory(envRepository)),
+		logger:        log.NewLogger(),
+		htmlGenerator: htmlGenerator,
 	}
 
 	result, err := generator.Run(Config{TestDeployDir: testDeployDir})
 	require.NoError(t, err)
 	require.NotEqual(t, "", result.HtmlReportDir)
 
-	cmd.AssertExpectations(t)
-	commandFactory.AssertExpectations(t)
+	htmlGenerator.AssertExpectations(t)
+	require.Equal(t, fmt.Sprintf("%s/test-scheme", result.HtmlReportDir), htmlGenerator.Calls[0].Arguments[0])
+	require.Equal(t, xcresultPath, htmlGenerator.Calls[0].Arguments[1])
 }
 
 func TestReportGenerator_Run_ReportFolderHandling(t *testing.T) {
@@ -174,11 +164,10 @@ func TestReportGenerator_Run_ReportFolderHandling(t *testing.T) {
 		envRepository.On("Get", "BITRISE_HTML_REPORT_DIR").Return(dir)
 
 		generator := ReportGenerator{
-			envRepository:  envRepository,
-			inputParser:    nil,
-			commandFactory: nil,
-			exporter:       export.Exporter{},
-			logger:         nil,
+			envRepository: envRepository,
+			inputParser:   nil,
+			exporter:      export.Exporter{},
+			logger:        nil,
 		}
 		rootDir, err := generator.htmlReportsRootDir()
 		if tt.wantErr {
@@ -208,29 +197,16 @@ func TestReportGenerator_Export(t *testing.T) {
 	exporter := export.NewExporter(commandFactory)
 	envRepository := env.NewRepository()
 	generator := ReportGenerator{
-		envRepository:  envRepository,
-		inputParser:    stepconf.NewInputParser(envRepository),
-		commandFactory: command.NewFactory(envRepository),
-		exporter:       exporter,
-		logger:         log.NewLogger(),
+		envRepository: envRepository,
+		inputParser:   stepconf.NewInputParser(envRepository),
+		exporter:      exporter,
+		logger:        log.NewLogger(),
+		htmlGenerator: &xctesthtmlreport.BitriseXchtmlGenerator{
+			Logger:         log.NewLogger(),
+			CommandFactory: commandFactory,
+		},
 	}
 
 	err := generator.Export(Result{HtmlReportDir: value})
 	require.NoError(t, err)
-}
-
-func setupRunEnvironment(t *testing.T) string {
-	tempDir := t.TempDir()
-	xcresultPath := filepath.Join(tempDir, "test-scheme", "test-scheme.xcresult")
-	require.NoError(t, os.MkdirAll(xcresultPath, 0755))
-
-	imagePaths := []string{
-		filepath.Join(xcresultPath, "a.png"),
-		filepath.Join(xcresultPath, "b.png"),
-	}
-	for _, path := range imagePaths {
-		require.NoError(t, os.WriteFile(path, []byte("abcd"), 0755))
-	}
-
-	return tempDir
 }
