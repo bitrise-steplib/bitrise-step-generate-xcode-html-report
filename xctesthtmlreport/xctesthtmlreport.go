@@ -8,7 +8,7 @@ import (
 
 const toolCmd = "xchtmlreport-bitrise"
 const defaultRemoteVersion = "1.0.0"
-const BitriseXcHTMLReportVersionEnvKey = "BITRISE_XCHMTL_REPORT_VERSION"
+const BitriseXcHTMLReportVersionEnvKey = "BITRISE_XCHTML_REPORT_VERSION"
 
 type BitriseXchtmlGenerator struct {
 	Logger         log.Logger
