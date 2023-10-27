@@ -42,7 +42,7 @@ type ReportGenerator struct {
 	commandFactory command.Factory
 	exporter       export.Exporter
 	logger         log.Logger
-	generator      xctesthtmlreport.Generator
+	htmlGenerator  xctesthtmlreport.Generator
 }
 
 func NewReportGenerator(
@@ -59,7 +59,7 @@ func NewReportGenerator(
 		commandFactory: commandFactory,
 		exporter:       exporter,
 		logger:         logger,
-		generator:      generator,
+		htmlGenerator:  generator,
 	}
 }
 
@@ -97,9 +97,9 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 
 func (r *ReportGenerator) InstallDependencies() error {
 	r.logger.Println()
-	err := r.generator.Install()
+	err := r.htmlGenerator.Install()
 	if err != nil {
-		return fmt.Errorf("failed to install report generator tool: %w", err)
+		return fmt.Errorf("failed to install htmlGenerator tool: %w", err)
 	}
 	return nil
 }
@@ -171,7 +171,7 @@ func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string
 		return err
 	}
 
-	err = r.generator.Generate(dirPath, xcresultPath)
+	err = r.htmlGenerator.Generate(dirPath, xcresultPath)
 	if err != nil {
 		return fmt.Errorf("failed to generate html: %w", err)
 	}

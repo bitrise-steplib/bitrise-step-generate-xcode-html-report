@@ -1,12 +1,10 @@
 package xctesthtmlreport
 
 import (
-	"context"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/bitrise-io/go-utils/filedownloader"
 	"github.com/bitrise-io/go-utils/retry"
-	"github.com/google/go-github/github"
 	"os"
 	"os/exec"
 	"strings"
@@ -18,36 +16,30 @@ type versionProvider struct {
 }
 
 func (b *BitriseXchtmlGenerator) Install() error {
-	ctx := context.Background()
-	client := github.NewClient(nil)
 
-	b.Logger.Printf("Checking latest release of Bitrise-XCTestHTMLReport")
-	release, _, err := client.Repositories.GetLatestRelease(ctx, "bitrise-io", "XCTestHTMLReport")
+	b.Logger.Printf("Checking release versions for Bitrise-XCTestHTMLReport")
+
+	//shouldDownload := shouldDownload(versionProvider{
+	//	localVersionProvider: func() string {
+	//		return getLocalVersion()
+	//	},
+	//	remoteVersionProvider: func() string {
+	//		return
+	//	},
+	//})
+	//
+	//if !shouldDownload {
+	//	b.Logger.Printf("Local has the latest Bitrise-XCTestHTMLReport version")
+	//	b.toolPath = toolCmd
+	//	return nil
+	//}
+
+	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport", "1.0.0")
+	path, err := downloadRelease("1.0.0")
 	if err != nil {
 		return err
 	}
-
-	shouldDownload := shouldDownload(versionProvider{
-		localVersionProvider: func() string {
-			return getLocalVersion()
-		},
-		remoteVersionProvider: func() string {
-			return *release.Name
-		},
-	})
-
-	if !shouldDownload {
-		b.Logger.Printf("Local has the latest Bitrise-XCTestHTMLReport version")
-		b.toolPath = toolCmd
-		return nil
-	}
-
-	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport", *release.Name)
-	path, err := downloadRelease(release)
-	if err != nil {
-		return err
-	}
-	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport is finished", *release.Name)
+	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport is finished", "1.0.0")
 	b.toolPath = path
 	return nil
 }
@@ -84,14 +76,14 @@ func commandExists(cmd string) bool {
 	return err == nil
 }
 
-func downloadRelease(release *github.RepositoryRelease) (string, error) {
+func downloadRelease(version string) (string, error) {
 	temp, err := os.MkdirTemp("", toolCmd)
 	if err != nil {
 		return "", err
 	}
 	toolPath := fmt.Sprintf("%s/xchtmlreport-bitrise", temp)
 	downloader := filedownloader.New(retry.NewHTTPClient().StandardClient())
-	if err := downloader.Get(toolPath, *release.Assets[0].BrowserDownloadURL); err != nil {
+	if err := downloader.Get(toolPath, fmt.Sprintf("https://github.com/bitrise-io/XCTestHTMLReport/releases/download/%s/xchtmlreport-bitrise", version)); err != nil {
 		return "", err
 	}
 	err = os.Chmod(toolPath, 0755)

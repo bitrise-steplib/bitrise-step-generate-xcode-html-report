@@ -78,27 +78,18 @@ func TestReportGenerator_ProcessConfig(t *testing.T) {
 }
 
 func TestReportGenerator_InstallDependencies(t *testing.T) {
-	cmd := new(mocks.Command)
-	cmd.On("RunAndReturnTrimmedCombinedOutput").Return("", nil).Once()
-
-	arguments := []string{"install", "bitrise-io/XCTestHTMLReport@speed-improvements", "--no-link"}
-	commandFactory := new(mocks.Factory)
-	commandFactory.On("Create", "mint", arguments, mock.Anything).Return(cmd).Once()
-
-	envRepository := env.NewRepository()
-	generator := ReportGenerator{
-		envRepository:  env.NewRepository(),
-		inputParser:    stepconf.NewInputParser(envRepository),
-		commandFactory: commandFactory,
-		exporter:       export.NewExporter(command.NewFactory(envRepository)),
-		logger:         log.NewLogger(),
+	htmlGenerator := new(mocks.Generator)
+	htmlGenerator.On("Install").Return(nil).Once()
+	reportGenerator := ReportGenerator{
+		logger:        log.NewLogger(),
+		htmlGenerator: htmlGenerator,
 	}
 
-	err := generator.InstallDependencies()
+	err := reportGenerator.InstallDependencies()
 	require.NoError(t, err)
-
-	cmd.AssertExpectations(t)
-	commandFactory.AssertExpectations(t)
+	htmlGenerator.AssertCalled(t, "Install")
+	htmlGenerator.AssertNumberOfCalls(t, "Install", 1)
+	htmlGenerator.AssertNotCalled(t, "Generate")
 }
 
 func TestReportGenerator_Run(t *testing.T) {
