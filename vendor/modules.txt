@@ -1,6 +1,3 @@
-# github.com/Masterminds/semver/v3 v3.2.1
-## explicit; go 1.18
-github.com/Masterminds/semver/v3
 # github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/export
@@ -26,14 +23,6 @@ github.com/bitrise-io/go-utils/v2/pathutil
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/google/go-cmp v0.5.9
-## explicit; go 1.13
-# github.com/google/go-github v17.0.0+incompatible
-## explicit
-github.com/google/go-github/github
-# github.com/google/go-querystring v1.1.0
-## explicit; go 1.10
-github.com/google/go-querystring/query
 # github.com/hashicorp/go-cleanhttp v0.5.2
 ## explicit; go 1.13
 github.com/hashicorp/go-cleanhttp
