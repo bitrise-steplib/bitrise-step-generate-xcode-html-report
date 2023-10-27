@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/bitrise-io/go-steputils/v2/export"
+	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/xctesthtmlreport"
 	"os"
 
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
@@ -57,6 +58,10 @@ func createStep(logger log.Logger) step.ReportGenerator {
 	inputParser := stepconf.NewInputParser(envRepository)
 	commandFactory := command.NewFactory(envRepository)
 	exporter := export.NewExporter(commandFactory)
+	generator := xctesthtmlreport.BitriseXchtmlGenerator{
+		Logger:         logger,
+		CommandFactory: commandFactory,
+	}
 
-	return step.NewReportGenerator(envRepository, inputParser, commandFactory, exporter, logger)
+	return step.NewReportGenerator(envRepository, inputParser, commandFactory, exporter, logger, &generator)
 }
