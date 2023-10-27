@@ -1,7 +1,6 @@
 package xctesthtmlreport
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -121,10 +120,4 @@ func Test_shouldDownload(t *testing.T) {
 			require.Equal(t, test.expected, r)
 		})
 	}
-
-	str := getLocalVersion()
-	fmt.Print(str)
-
-	str = getRemoteVersion()
-	fmt.Print(str)
 }

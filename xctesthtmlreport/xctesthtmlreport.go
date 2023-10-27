@@ -2,17 +2,17 @@ package xctesthtmlreport
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/github"
+
+	"github.com/bitrise-io/go-utils/filedownloader"
+	"github.com/bitrise-io/go-utils/retry"
 )
-
-// latest release:
-// https://docs.github.com/en/free-pro-team@latest/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release
-
-type Path string
 
 const toolCmd = "xchtmlreport"
 
@@ -21,13 +21,21 @@ type versionProvider struct {
 	remoteVersionProvider func() string
 }
 
-func New() (Path, error) {
+func New() (string, error) {
+	ctx := context.Background()
+	client := github.NewClient(nil)
+
+	release, _, err := client.Repositories.GetLatestRelease(ctx, "bitrise-io", "XCTestHTMLReport")
+	if err != nil {
+		return "", err
+	}
+
 	shouldDownload := shouldDownload(versionProvider{
 		localVersionProvider: func() string {
 			return getLocalVersion()
 		},
 		remoteVersionProvider: func() string {
-			return getRemoteVersion()
+			return *release.Name
 		},
 	})
 
@@ -35,7 +43,7 @@ func New() (Path, error) {
 		return toolCmd, nil
 	}
 
-	return "", nil
+	return downloadRelease(release)
 }
 
 func shouldDownload(provider versionProvider) bool {
@@ -65,20 +73,25 @@ func getLocalVersion() string {
 	return string(localVersion)
 }
 
-// Check if the command is installed:
 func commandExists(cmd string) bool {
 	_, err := exec.LookPath(cmd)
 	return err == nil
 }
 
-func getRemoteVersion() string {
-	ctx := context.Background()
-	client := github.NewClient(nil)
-
-	release, _, err := client.Repositories.GetLatestRelease(ctx, "bitrise-io", "XCTestHTMLReport")
+func downloadRelease(release *github.RepositoryRelease) (string, error) {
+	temp, err := os.MkdirTemp("", toolCmd)
 	if err != nil {
-		return ""
+		return "", err
+	}
+	toolPath := fmt.Sprintf("%s/xchtmlreport-bitrise", temp)
+	downloader := filedownloader.New(retry.NewHTTPClient().StandardClient())
+	if err := downloader.Get(toolPath, *release.Assets[0].BrowserDownloadURL); err != nil {
+		return "", err
+	}
+	err = os.Chmod(toolPath, 0755)
+	if err != nil {
+		return "", err
 	}
 
-	return *release.Name
+	return toolPath, nil
 }
