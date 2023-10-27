@@ -61,6 +61,7 @@ func createStep(logger log.Logger) step.ReportGenerator {
 	generator := xctesthtmlreport.BitriseXchtmlGenerator{
 		Logger:         logger,
 		CommandFactory: commandFactory,
+		EnvRepository:  envRepository,
 	}
 
 	return step.NewReportGenerator(envRepository, inputParser, commandFactory, exporter, logger, &generator)
