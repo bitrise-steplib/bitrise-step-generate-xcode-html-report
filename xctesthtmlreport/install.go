@@ -2,60 +2,37 @@ package xctesthtmlreport
 
 import (
 	"fmt"
-	"github.com/Masterminds/semver/v3"
 	"github.com/bitrise-io/go-utils/filedownloader"
 	"github.com/bitrise-io/go-utils/retry"
 	"os"
 	"os/exec"
-	"strings"
 )
 
-type versionProvider struct {
-	localVersionProvider  func() string
-	remoteVersionProvider func() string
-}
-
 func (b *BitriseXchtmlGenerator) Install() error {
-
 	b.Logger.Printf("Checking release versions for Bitrise-XCTestHTMLReport")
 
-	//shouldDownload := shouldDownload(versionProvider{
-	//	localVersionProvider: func() string {
-	//		return getLocalVersion()
-	//	},
-	//	remoteVersionProvider: func() string {
-	//		return
-	//	},
-	//})
-	//
-	//if !shouldDownload {
-	//	b.Logger.Printf("Local has the latest Bitrise-XCTestHTMLReport version")
-	//	b.toolPath = toolCmd
-	//	return nil
-	//}
+	versionOverride := b.EnvRepository.Get(BitriseXcHTMLReportVersionEnvKey)
+	localVersion := getLocalVersion()
+	shouldDownload := localVersion == "" || versionOverride != ""
 
-	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport", "1.0.0")
-	path, err := downloadRelease("1.0.0")
+	if !shouldDownload {
+		b.Logger.Printf("Using pre-installed Bitrise-XCTestHTMLReport, version: %s", localVersion)
+		b.toolPath = toolCmd
+		return nil
+	}
+
+	if versionOverride == "" {
+		versionOverride = defaultRemoteVersion
+	}
+
+	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport", versionOverride)
+	path, err := downloadRelease(versionOverride)
 	if err != nil {
 		return err
 	}
-	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport is finished", "1.0.0")
+	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport is finished", versionOverride)
 	b.toolPath = path
 	return nil
-}
-
-func shouldDownload(provider versionProvider) bool {
-	localVersion, err := semver.NewVersion(strings.TrimSpace(provider.localVersionProvider()))
-	if err != nil {
-		return true
-	}
-
-	remoteVersion, err := semver.NewVersion(strings.TrimSpace(provider.remoteVersionProvider()))
-	if err != nil {
-		return false
-	}
-
-	return localVersion.Compare(remoteVersion) < 0
 }
 
 func getLocalVersion() string {
