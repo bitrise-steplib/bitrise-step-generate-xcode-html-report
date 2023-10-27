@@ -2,7 +2,6 @@ package step
 
 import (
 	"fmt"
-	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/xctesthtmlreport"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,6 +13,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/mocks"
+	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/xctesthtmlreport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
