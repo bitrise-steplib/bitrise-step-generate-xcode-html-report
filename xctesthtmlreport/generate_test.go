@@ -29,8 +29,8 @@ func TestReportGenerator_Run(t *testing.T) {
 	commandFactory.On("Create", testingToolPath, mock.Anything, mock.Anything).Run(runFunc).Return(cmd).Once()
 
 	bitriseXchtmlGenerator := BitriseXchtmlGenerator{
-		CommandFactory: commandFactory,
-		Logger:         log.NewLogger(),
+		commandFactory: commandFactory,
+		logger:         log.NewLogger(),
 		toolPath:       testingToolPath,
 	}
 	err := bitriseXchtmlGenerator.Generate(tempDir, testDeployDir)

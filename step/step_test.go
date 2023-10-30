@@ -201,10 +201,7 @@ func TestReportGenerator_Export(t *testing.T) {
 		inputParser:   stepconf.NewInputParser(envRepository),
 		exporter:      exporter,
 		logger:        log.NewLogger(),
-		htmlGenerator: &xctesthtmlreport.BitriseXchtmlGenerator{
-			Logger:         log.NewLogger(),
-			CommandFactory: commandFactory,
-		},
+		htmlGenerator: xctesthtmlreport.NewBitriseXchtmlGenerator(log.NewLogger(), commandFactory, env.NewRepository(), nil),
 	}
 
 	err := generator.Export(Result{HtmlReportDir: value})

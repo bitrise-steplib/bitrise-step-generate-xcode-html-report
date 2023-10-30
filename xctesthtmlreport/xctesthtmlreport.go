@@ -11,10 +11,29 @@ const defaultRemoteVersion = "1.0.0"
 const BitriseXcHTMLReportVersionEnvKey = "BITRISE_XCHTML_REPORT_VERSION"
 
 type BitriseXchtmlGenerator struct {
-	Logger         log.Logger
-	CommandFactory command.Factory
-	EnvRepository  env.Repository
+	logger         log.Logger
+	commandFactory command.Factory
+	envRepository  env.Repository
+	downloader     Downloader
 	toolPath       string
+}
+
+type Downloader interface {
+	Get(destination, source string) error
+}
+
+func NewBitriseXchtmlGenerator(
+	logger log.Logger,
+	commandFactory command.Factory,
+	envRepository env.Repository,
+	downloader Downloader,
+) *BitriseXchtmlGenerator {
+	return &BitriseXchtmlGenerator{
+		logger:         logger,
+		commandFactory: commandFactory,
+		envRepository:  envRepository,
+		downloader:     downloader,
+	}
 }
 
 type Generator interface {

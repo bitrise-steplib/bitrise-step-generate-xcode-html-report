@@ -2,21 +2,18 @@ package xctesthtmlreport
 
 import (
 	"fmt"
-	"github.com/bitrise-io/go-utils/filedownloader"
-	"github.com/bitrise-io/go-utils/retry"
 	"os"
-	"os/exec"
 )
 
 func (b *BitriseXchtmlGenerator) Install() error {
-	b.Logger.Printf("Checking release versions for Bitrise-XCTestHTMLReport")
+	b.logger.Printf("Checking release versions for Bitrise-XCTestHTMLReport")
 
-	versionOverride := b.EnvRepository.Get(BitriseXcHTMLReportVersionEnvKey)
-	localVersion := getLocalVersion()
+	versionOverride := b.envRepository.Get(BitriseXcHTMLReportVersionEnvKey)
+	localVersion := b.getLocalVersion()
 	shouldDownload := localVersion == "" || versionOverride != ""
 
 	if !shouldDownload {
-		b.Logger.Printf("Using pre-installed Bitrise-XCTestHTMLReport, version: %s", localVersion)
+		b.logger.Printf("Using pre-installed Bitrise-XCTestHTMLReport, version: %s", localVersion)
 		b.toolPath = toolCmd
 		return nil
 	}
@@ -25,42 +22,33 @@ func (b *BitriseXchtmlGenerator) Install() error {
 		versionOverride = defaultRemoteVersion
 	}
 
-	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport", versionOverride)
-	path, err := downloadRelease(versionOverride)
+	b.logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport", versionOverride)
+	path, err := b.downloadRelease(versionOverride)
 	if err != nil {
 		return err
 	}
-	b.Logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport is finished", versionOverride)
+	b.logger.Printf("Downloading %s version of Bitrise-XCTestHTMLReport is finished", versionOverride)
 	b.toolPath = path
 	return nil
 }
 
-func getLocalVersion() string {
-	if !commandExists(toolCmd) {
-		return ""
-	}
-
-	localVersion, err := exec.Command(toolCmd, "--version").Output()
+func (b *BitriseXchtmlGenerator) getLocalVersion() string {
+	cmd := b.commandFactory.Create(toolCmd, []string{"--version"}, nil)
+	localVersion, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return ""
 	}
 
-	return string(localVersion)
+	return localVersion
 }
 
-func commandExists(cmd string) bool {
-	_, err := exec.LookPath(cmd)
-	return err == nil
-}
-
-func downloadRelease(version string) (string, error) {
+func (b *BitriseXchtmlGenerator) downloadRelease(version string) (string, error) {
 	temp, err := os.MkdirTemp("", toolCmd)
 	if err != nil {
 		return "", err
 	}
 	toolPath := fmt.Sprintf("%s/xchtmlreport-bitrise", temp)
-	downloader := filedownloader.New(retry.NewHTTPClient().StandardClient())
-	if err := downloader.Get(toolPath, fmt.Sprintf("https://github.com/bitrise-io/XCTestHTMLReport/releases/download/%s/xchtmlreport-bitrise", version)); err != nil {
+	if err := b.downloader.Get(toolPath, fmt.Sprintf("https://github.com/bitrise-io/XCTestHTMLReport/releases/download/%s/xchtmlreport-bitrise", version)); err != nil {
 		return "", err
 	}
 	err = os.Chmod(toolPath, 0755)

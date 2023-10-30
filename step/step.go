@@ -93,6 +93,7 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 
 func (r *ReportGenerator) InstallDependencies() error {
 	r.logger.Println()
+	r.logger.Infof("Installing XCTestHTMLReport")
 	err := r.htmlGenerator.Install()
 	if err != nil {
 		return fmt.Errorf("failed to install htmlGenerator tool: %w", err)
