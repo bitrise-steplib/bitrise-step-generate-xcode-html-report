@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mattn/go-zglob"
+
 	"github.com/bitrise-io/go-steputils/v2/export"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
-	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
-	"github.com/mattn/go-zglob"
+	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/xctesthtmlreport"
 )
 
 const (
@@ -35,20 +36,26 @@ type Result struct {
 }
 
 type ReportGenerator struct {
-	envRepository  env.Repository
-	inputParser    stepconf.InputParser
-	commandFactory command.Factory
-	exporter       export.Exporter
-	logger         log.Logger
+	envRepository env.Repository
+	inputParser   stepconf.InputParser
+	exporter      export.Exporter
+	logger        log.Logger
+	htmlGenerator xctesthtmlreport.Generator
 }
 
-func NewReportGenerator(envRepository env.Repository, inputParser stepconf.InputParser, commandFactory command.Factory, exporter export.Exporter, logger log.Logger) ReportGenerator {
+func NewReportGenerator(
+	envRepository env.Repository,
+	inputParser stepconf.InputParser,
+	exporter export.Exporter,
+	logger log.Logger,
+	generator xctesthtmlreport.Generator,
+) ReportGenerator {
 	return ReportGenerator{
-		envRepository:  envRepository,
-		inputParser:    inputParser,
-		commandFactory: commandFactory,
-		exporter:       exporter,
-		logger:         logger,
+		envRepository: envRepository,
+		inputParser:   inputParser,
+		exporter:      exporter,
+		logger:        logger,
+		htmlGenerator: generator,
 	}
 }
 
@@ -87,15 +94,10 @@ func (r *ReportGenerator) ProcessConfig() (*Config, error) {
 func (r *ReportGenerator) InstallDependencies() error {
 	r.logger.Println()
 	r.logger.Infof("Installing XCTestHTMLReport")
-
-	params := []string{"install", "bitrise-io/XCTestHTMLReport@speed-improvements", "--no-link"}
-	cmd := r.commandFactory.Create("mint", params, nil)
-
-	_, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	err := r.htmlGenerator.Install()
 	if err != nil {
-		return fmt.Errorf("failed to install XCTestHTMLReport: %w", err)
+		return fmt.Errorf("failed to install htmlGenerator tool: %w", err)
 	}
-
 	return nil
 }
 
@@ -166,12 +168,9 @@ func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string
 		return err
 	}
 
-	r.logger.Printf("Generating report for: %s", baseName)
-	params := []string{"run", "bitrise-io/XCTestHTMLReport@speed-improvements", "--output", dirPath, xcresultPath}
-	cmd := r.commandFactory.Create("mint", params, nil)
-	_, err = cmd.RunAndReturnTrimmedCombinedOutput()
+	err = r.htmlGenerator.Generate(dirPath, xcresultPath)
 	if err != nil {
-		return fmt.Errorf("failed to export html: %w", err)
+		return fmt.Errorf("failed to generate html: %w", err)
 	}
 
 	if err := moveAssets(xcresultPath, dirPath); err != nil {

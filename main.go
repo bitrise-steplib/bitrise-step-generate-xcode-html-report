@@ -2,16 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/bitrise-io/go-steputils/v2/export"
 	"os"
 
+	"github.com/bitrise-io/go-steputils/v2/export"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
+	"github.com/bitrise-io/go-utils/filedownloader"
+	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/errorutil"
 	. "github.com/bitrise-io/go-utils/v2/exitcode"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/step"
+	"github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report/xctesthtmlreport"
 )
 
 func main() {
@@ -57,6 +60,8 @@ func createStep(logger log.Logger) step.ReportGenerator {
 	inputParser := stepconf.NewInputParser(envRepository)
 	commandFactory := command.NewFactory(envRepository)
 	exporter := export.NewExporter(commandFactory)
+	downloader := filedownloader.New(retry.NewHTTPClient().StandardClient())
+	generator := xctesthtmlreport.NewBitriseXchtmlGenerator(logger, commandFactory, envRepository, downloader)
 
-	return step.NewReportGenerator(envRepository, inputParser, commandFactory, exporter, logger)
+	return step.NewReportGenerator(envRepository, inputParser, exporter, logger, generator)
 }
