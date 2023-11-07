@@ -22,6 +22,8 @@ project_type_tags:
 - ionic
 - flutter
 
+is_always_run: true
+
 toolkit:
   go:
     package_name: github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report
