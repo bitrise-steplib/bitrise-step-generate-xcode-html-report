@@ -273,7 +273,7 @@ func createReportInfo(htmlReportDir string) error {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(htmlReportDir, htmlReportInfoFile), jsonData, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(htmlReportDir, htmlReportInfoFile), jsonData, 0755); err != nil {
 		return err
 	}
 
