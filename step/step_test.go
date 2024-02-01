@@ -116,6 +116,15 @@ func TestReportGenerator_Run(t *testing.T) {
 	htmlGenerator.AssertExpectations(t)
 	require.Equal(t, fmt.Sprintf("%s/test-scheme", result.HtmlReportDir), htmlGenerator.Calls[0].Arguments[0])
 	require.Equal(t, xcresultPath, htmlGenerator.Calls[0].Arguments[1])
+
+	reportDirs, err := os.ReadDir(result.HtmlReportDir)
+	require.NoError(t, err)
+
+	for _, reportDir := range reportDirs {
+		reportInfo, err := os.ReadFile(filepath.Join(result.HtmlReportDir, reportDir.Name(), htmlReportInfoFile))
+		require.NoError(t, err)
+		require.JSONEq(t, `{ "category": "test" }`, string(reportInfo))
+	}
 }
 
 func TestReportGenerator_Run_ReportFolderHandling(t *testing.T) {

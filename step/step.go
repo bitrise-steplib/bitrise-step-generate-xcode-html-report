@@ -1,6 +1,7 @@
 package step
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,7 +18,8 @@ import (
 )
 
 const (
-	htmlReportDirKey = "BITRISE_HTML_REPORT_DIR"
+	htmlReportDirKey   = "BITRISE_HTML_REPORT_DIR"
+	htmlReportInfoFile = "report-info.json"
 )
 
 type Input struct {
@@ -33,6 +35,10 @@ type Config struct {
 
 type Result struct {
 	HtmlReportDir string
+}
+
+type ReportInfo struct {
+	Category string `json:"category"`
 }
 
 type ReportGenerator struct {
@@ -177,6 +183,10 @@ func (r *ReportGenerator) generateTestReport(rootDir string, xcresultPath string
 		return fmt.Errorf("failed to move assets: %w", err)
 	}
 
+	if err := createReportInfo(dirPath); err != nil {
+		return fmt.Errorf("failed to create report info file: %w", err)
+	}
+
 	return nil
 }
 
@@ -248,6 +258,23 @@ func moveAssets(xcresultPath string, htmlReportDir string) error {
 		if err := os.Rename(oldPath, newPath); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func createReportInfo(htmlReportDir string) error {
+	reportInfo := ReportInfo{
+		Category: "test",
+	}
+
+	jsonData, err := json.Marshal(reportInfo)
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(filepath.Join(htmlReportDir, htmlReportInfoFile), jsonData, 0755); err != nil {
+		return err
 	}
 
 	return nil
